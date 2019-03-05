@@ -1,0 +1,21 @@
+{
+  "name": "cordova-plugin-zebraprinter",
+  "version": "0.0.1",
+  "description": "Cordova Zebraprinter Plugin",
+  "cordova": {
+    "id": "cordova-plugin-zebraprinter",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "zebraprinter",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios"
+  ],
+  "author": "",
+  "license": "Apache 2.0"
+}

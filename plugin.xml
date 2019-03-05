@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="cordova-plugin-zebraprinter" version="0.0.1">
+    <name>Zebraprinter</name>
+    <description>Cordova Zebraprinter Plugin</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,zebraprinter</keywords>
+    <js-module src="www/zebraprinter.js" name="zebraprinter">
+        <clobbers target="device" />
+    </js-module>
+
+    <platform name="android">
+      <config-file target="config.xml" parent="/*">
+        <feature name="ZebraPrinter">
+          <param name="android-package" value="de.bfpi.cordova.zebraprinter"/>
+        </feature>
+      </config-file>
+
+      <config-file target="AndroidManifest.xml" parent="/*">
+        <uses-permission android:name="android.permission.BLUETOOTH" />
+        <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+      </config-file>
+      <source-file src="src/android/de/bfpi/cordova/zebraprinter/Zebraprinter.java" target-dir="src/de/bfpi/cordove/zebraprinter" />
+      <source-file src="src/android/ZSDK_ANDROID_API.jar" target-dir="libs"/>
+    </platform>
+</plugin>
