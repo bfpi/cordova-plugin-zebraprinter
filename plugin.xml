@@ -6,13 +6,13 @@
     <license>Apache 2.0</license>
     <keywords>cordova,zebraprinter</keywords>
     <js-module src="www/zebraprinter.js" name="zebraprinter">
-        <clobbers target="device" />
+      <clobbers target="cordova.plugins.zebraprinter"/>
     </js-module>
 
     <platform name="android">
       <config-file target="config.xml" parent="/*">
-        <feature name="ZebraPrinter">
-          <param name="android-package" value="de.bfpi.cordova.zebraprinter"/>
+        <feature name="Zebraprinter">
+          <param name="android-package" value="de.bfpi.cordova.zebraprinter.Zebraprinter"/>
         </feature>
       </config-file>
 
@@ -20,7 +20,7 @@
         <uses-permission android:name="android.permission.BLUETOOTH" />
         <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
       </config-file>
-      <source-file src="src/android/de/bfpi/cordova/zebraprinter/Zebraprinter.java" target-dir="src/de/bfpi/cordove/zebraprinter" />
+      <source-file src="src/android/de/bfpi/cordova/zebraprinter/Zebraprinter.java" target-dir="src/de/bfpi/cordova/zebraprinter" />
       <source-file src="src/android/ZSDK_ANDROID_API.jar" target-dir="libs"/>
     </platform>
 </plugin>

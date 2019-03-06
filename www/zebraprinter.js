@@ -1,5 +1,7 @@
 var exec = require('cordova/exec');
 
-exports.print = function(macAddress, textToPrint, successCallback, errorCallback) {
-    cordova.exec(successCallback, errorCallback, 'Zebraprinter', 'print', [macAddress, textToPrint]);
+module.exports = {
+  print: function(macAddress, textToPrint, successCallback, errorCallback) {
+    exec(successCallback, errorCallback, 'Zebraprinter', 'print', [macAddress, textToPrint]);
+  }
 };

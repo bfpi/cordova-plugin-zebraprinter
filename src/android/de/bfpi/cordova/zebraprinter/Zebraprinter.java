@@ -33,7 +33,7 @@ public class Zebraprinter extends CordovaPlugin {
   private CallbackContext callbackContext;
   private final int REQUEST_ACCESS_COARSE_LOCATION_CODE = 0;
 
-  public ZebraPrinter() {
+  public Zebraprinter() {
     Log.d(LOG_TAG, "Plugin created");
   }
 
@@ -57,19 +57,24 @@ public class Zebraprinter extends CordovaPlugin {
   }
 
   private void _print() {
-    String macAddress = this.args.getString(0);
-    String textToPrint = this.args.getString(1);
+    String macAddress;
+    String textToPrint;
+    try {
+      macAddress = this.args.getString(0);
+      textToPrint = this.args.getString(1);
+    }
+    catch(JSONException e) {
+      Log.e(LOG_TAG, "Exception: "+ e.getMessage());
+      callbackContext.error(e.getMessage());
+      return;
+    }
     cordova.getThreadPool().execute(new Runnable() {
       public void run() {
         try {
           Connection conn = new BluetoothConnection(macAddress);
           Looper.prepare();
           conn.open();
-          String cpclData = "! 0 200 200 210 1\r\n"
-            + "TEXT 4 0 30 40 This is a CPCL test.\r\n"
-            + "FORM\r\n"
-            + "PRINT\r\n";
-          conn.write(cpclData.getBytes());
+          conn.write(textToPrint.getBytes());
           Thread.sleep(500);
           conn.close();
           Looper.myLooper().quit();
@@ -95,7 +100,7 @@ public class Zebraprinter extends CordovaPlugin {
     for(int r:grantResults) {
       if(r == PackageManager.PERMISSION_DENIED) {
         Log.d(LOG_TAG, "Permission denied");
-        this.cbContext.error("permissions");
+        this.callbackContext.error("permissions");
         return;
       }
     }
