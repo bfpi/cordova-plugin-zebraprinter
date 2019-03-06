@@ -3,10 +3,11 @@ package de.bfpi.cordova.zebraprinter;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 
+import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.content.pm.PackageManager;
 import android.os.Looper;
 import android.util.Log;
-import android.Manifest;
-import android.content.pm.PackageManager;
 
 import com.zebra.sdk.comm.BluetoothConnection;
 import com.zebra.sdk.comm.Connection;
@@ -42,6 +43,9 @@ public class Zebraprinter extends CordovaPlugin {
     this.callbackContext = callbackContext;
     if (action.equals("print")) {
       this.print();
+    }
+    else if (action.equals("discover")) {
+      this.discover();
     }
 
     return true;
@@ -105,5 +109,49 @@ public class Zebraprinter extends CordovaPlugin {
       }
     }
     _print();
+  }
+
+  private void discover() {
+    final CallbackContext callbackContext = this.callbackContext;
+    cordova.getThreadPool().execute(new Runnable() {
+      public void run() {
+        if (Looper.myLooper() == null) {
+          Looper.prepare();
+        }
+        try {
+          BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+          if (bluetoothAdapter.isEnabled()) {
+            Log.d(LOG_TAG, "Searching for printers...");
+            JSONArray printer = new JSONArray();
+            BluetoothDiscoverer.findPrinters(cordova.getActivity().getApplicationContext(),
+              new DiscoveryHandler() {
+                public void discoveryError(String message) {
+                  Log.e(LOG_TAG, "An error occurred while searching for printers. Message: " + message);
+                  callbackContext.success();
+                }
+
+                public void discoveryFinished() {
+                  Log.d(LOG_TAG, "Finished searching for printers...");
+                  callbackContext.success(printer);
+                }
+
+                public void foundPrinter(final DiscoveredPrinter p) {
+                  Log.d(LOG_TAG, "Printer found: " + p.address);
+                  printer.put(p.address);
+                }
+              });
+          } else {
+            Log.d(LOG_TAG, "Bluetooth is disabled...");
+            callbackContext.error("Bluetooth is disabled");
+          }
+
+        } catch (ConnectionException e) {
+          Log.e(LOG_TAG, "Connection exception: " + e.getMessage());
+          callbackContext.error(e.getMessage());
+        } finally {
+          Looper.myLooper().quit();
+        }
+      }
+    });
   }
 }
