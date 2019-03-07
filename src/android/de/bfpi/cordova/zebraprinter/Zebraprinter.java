@@ -18,6 +18,7 @@ import com.zebra.sdk.printer.discovery.DiscoveredPrinterBluetooth;
 import com.zebra.sdk.printer.discovery.DiscoveryHandler;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,6 +62,7 @@ public class Zebraprinter extends CordovaPlugin {
   }
 
   private void _print() {
+    final CallbackContext callbackContext = this.callbackContext;
     String macAddress;
     String textToPrint;
     try {
@@ -76,15 +78,20 @@ public class Zebraprinter extends CordovaPlugin {
       public void run() {
         try {
           Connection conn = new BluetoothConnection(macAddress);
-          Looper.prepare();
+          if (Looper.myLooper() == null) {
+            Looper.prepare();
+          }
           conn.open();
-          conn.write(textToPrint.getBytes());
+          conn.write(textToPrint.getBytes(Charset.forName("windows-1252")));
           Thread.sleep(500);
           conn.close();
-          Looper.myLooper().quit();
+          callbackContext.success();
         } catch (Exception e) {
           Log.e(LOG_TAG, "Exception: " + e.getMessage());
           callbackContext.error(e.getMessage());
+        }
+        finally {
+          Looper.myLooper().quit();
         }
       }
     });
