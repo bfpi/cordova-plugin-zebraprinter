@@ -1,14 +1,10 @@
 package de.bfpi.cordova.zebraprinter;
 
-import org.apache.cordova.CallbackContext;
-import org.apache.cordova.CordovaPlugin;
-
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.content.pm.PackageManager;
 import android.os.Looper;
 import android.util.Log;
-
 import com.zebra.sdk.comm.BluetoothConnection;
 import com.zebra.sdk.comm.Connection;
 import com.zebra.sdk.comm.ConnectionException;
@@ -16,27 +12,32 @@ import com.zebra.sdk.printer.discovery.BluetoothDiscoverer;
 import com.zebra.sdk.printer.discovery.DiscoveredPrinter;
 import com.zebra.sdk.printer.discovery.DiscoveredPrinterBluetooth;
 import com.zebra.sdk.printer.discovery.DiscoveryHandler;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-
 public class Zebraprinter extends CordovaPlugin {
+  private static final String ACCESS_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
   private static final String LOG_TAG = "Zebraprinter";
-  private static final String PRINT = "print";
+  private static final int SEARCH_REQ_CODE = 0;
 
-  private JSONArray args;
   private CallbackContext callbackContext;
-  private final int REQUEST_ACCESS_COARSE_LOCATION_CODE = 0;
+  private JSONArray args;
+  private CordovaWebView webView;
 
-  public Zebraprinter() {
+  @Override
+  public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    super.initialize(cordova, webView);
     Log.d(LOG_TAG, "Plugin created");
+    this.webView = webView;
   }
 
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
@@ -44,24 +45,25 @@ public class Zebraprinter extends CordovaPlugin {
     this.callbackContext = callbackContext;
     if (action.equals("print")) {
       this.print();
+      return true;
     }
     else if (action.equals("discover")) {
       this.discover();
+      return true;
     }
-
-    return true;
+    return false;
   }
 
   private void print() {
-    if(hasPermission()) {
-      _print();
+    if (hasPermission()) {
+      printWithPermission();
     }
     else {
       requestPermissionAndPrint();
     }
   }
 
-  private void _print() {
+  private void printWithPermission() {
     final CallbackContext callbackContext = this.callbackContext;
     String macAddress;
     String textToPrint;
@@ -70,8 +72,7 @@ public class Zebraprinter extends CordovaPlugin {
       textToPrint = this.args.getString(1);
     }
     catch(JSONException e) {
-      Log.e(LOG_TAG, "Exception: "+ e.getMessage());
-      callbackContext.error(e.getMessage());
+      logAndCallCallbackError("Exception: "+ e.getMessage(), e);
       return;
     }
     cordova.getThreadPool().execute(new Runnable() {
@@ -86,9 +87,10 @@ public class Zebraprinter extends CordovaPlugin {
           Thread.sleep(500);
           conn.close();
           callbackContext.success();
+        } catch (ConnectionException e) {
+          logAndCallCallbackError("Verbindungsfehler: " + e.getMessage(), e);
         } catch (Exception e) {
-          Log.e(LOG_TAG, "Exception: " + e.getMessage());
-          callbackContext.error(e.getMessage());
+          logAndCallCallbackError("Exception: " + e.getMessage(), e);
         }
         finally {
           Looper.myLooper().quit();
@@ -98,24 +100,23 @@ public class Zebraprinter extends CordovaPlugin {
   }
 
   private boolean hasPermission() {
-    return cordova.hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+    return cordova.hasPermission(ACCESS_COARSE_LOCATION);
   }
 
   private void requestPermissionAndPrint() {
-    cordova.requestPermission(this, REQUEST_ACCESS_COARSE_LOCATION_CODE,
-        Manifest.permission.ACCESS_COARSE_LOCATION);
+    cordova.requestPermission(this, SEARCH_REQ_CODE, ACCESS_COARSE_LOCATION);
   }
 
   public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults)
     throws JSONException {
     for(int r:grantResults) {
       if(r == PackageManager.PERMISSION_DENIED) {
-        Log.d(LOG_TAG, "Permission denied");
-        this.callbackContext.error("permissions");
+        Log.d(LOG_TAG, "Permission denied.");
+        this.callbackContext.error("Permission denied.");
         return;
       }
     }
-    _print();
+    printWithPermission();
   }
 
   private void discover() {
@@ -127,7 +128,13 @@ public class Zebraprinter extends CordovaPlugin {
         }
         try {
           BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-          if (bluetoothAdapter.isEnabled()) {
+          if (bluetoothAdapter == null) {
+            logAndCallCallbackError("No Bluetooth adapter found.");
+          }
+          else if (!bluetoothAdapter.isEnabled()) {
+            logAndCallCallbackError("Bluetooth is disabled.");
+          }
+          else {
             Log.d(LOG_TAG, "Searching for printers...");
             JSONArray printer = new JSONArray();
             BluetoothDiscoverer.findPrinters(cordova.getActivity().getApplicationContext(),
@@ -147,18 +154,23 @@ public class Zebraprinter extends CordovaPlugin {
                   printer.put(p.address);
                 }
               });
-          } else {
-            Log.d(LOG_TAG, "Bluetooth is disabled...");
-            callbackContext.error("Bluetooth is disabled");
           }
-
         } catch (ConnectionException e) {
-          Log.e(LOG_TAG, "Connection exception: " + e.getMessage());
-          callbackContext.error(e.getMessage());
+          logAndCallCallbackError("Connection exception: " + e.getMessage(), e);
         } finally {
           Looper.myLooper().quit();
         }
       }
     });
+  }
+
+  private void logAndCallCallbackError(String message) {
+    Log.e(LOG_TAG, message);
+    callbackContext.error(message);
+  }
+
+  private void logAndCallCallbackError(String message, Throwable exception) {
+    Log.e(LOG_TAG, message, exception);
+    callbackContext.error(message);
   }
 }
