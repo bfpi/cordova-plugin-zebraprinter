@@ -40,6 +40,7 @@ public class Zebraprinter extends CordovaPlugin {
     this.webView = webView;
   }
 
+  @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
     this.args = args;
     this.callbackContext = callbackContext;
@@ -121,6 +122,10 @@ public class Zebraprinter extends CordovaPlugin {
 
   private void discover() {
     final CallbackContext callbackContext = this.callbackContext;
+    if (!hasPermission()) {
+      logAndCallCallbackError("Permission denied, check settings.");
+      return;
+    }
     cordova.getThreadPool().execute(new Runnable() {
       public void run() {
         if (Looper.myLooper() == null) {
