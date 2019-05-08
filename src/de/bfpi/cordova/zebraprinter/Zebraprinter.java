@@ -12,6 +12,7 @@ import com.zebra.sdk.printer.discovery.BluetoothDiscoverer;
 import com.zebra.sdk.printer.discovery.DiscoveredPrinter;
 import com.zebra.sdk.printer.discovery.DiscoveredPrinterBluetooth;
 import com.zebra.sdk.printer.discovery.DiscoveryHandler;
+import com.zebra.sdk.printer.SGD;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -84,6 +85,9 @@ public class Zebraprinter extends CordovaPlugin {
             Looper.prepare();
           }
           conn.open();
+          Log.d(LOG_TAG, "Connection opened, setting printer language to line_print");
+          SGD.SET("device.languages", "line_print", conn);
+          Log.d(LOG_TAG, "Setting printer language finished");
           conn.write(textToPrint.getBytes(Charset.forName("windows-1252")));
           Thread.sleep(500);
           conn.close();
