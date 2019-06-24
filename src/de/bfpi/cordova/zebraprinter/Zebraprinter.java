@@ -56,17 +56,21 @@ public class Zebraprinter extends CordovaPlugin {
     return false;
   }
 
-  private void print() {
+  private void discover() {
     if (hasPermission()) {
-      printWithPermission();
+      discoverWithPermission();
     }
     else {
-      requestPermissionAndPrint();
+      requestPermissionAndDiscover();
     }
   }
 
-  private void printWithPermission() {
+  private void print() {
     final CallbackContext callbackContext = this.callbackContext;
+    if (!hasPermission()) {
+      logAndCallCallbackError("Permission denied, check settings.");
+      return;
+    }
     String macAddress;
     String textToPrint;
     try {
@@ -108,7 +112,7 @@ public class Zebraprinter extends CordovaPlugin {
     return cordova.hasPermission(ACCESS_COARSE_LOCATION);
   }
 
-  private void requestPermissionAndPrint() {
+  private void requestPermissionAndDiscover() {
     cordova.requestPermission(this, SEARCH_REQ_CODE, ACCESS_COARSE_LOCATION);
   }
 
@@ -121,15 +125,11 @@ public class Zebraprinter extends CordovaPlugin {
         return;
       }
     }
-    printWithPermission();
+    discoverWithPermission();
   }
 
-  private void discover() {
+  private void discoverWithPermission() {
     final CallbackContext callbackContext = this.callbackContext;
-    if (!hasPermission()) {
-      logAndCallCallbackError("Permission denied, check settings.");
-      return;
-    }
     cordova.getThreadPool().execute(new Runnable() {
       public void run() {
         if (Looper.myLooper() == null) {
