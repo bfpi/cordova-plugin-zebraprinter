@@ -96,10 +96,8 @@ public class Zebraprinter extends CordovaPlugin {
           Thread.sleep(500);
           conn.close();
           callbackContext.success();
-        } catch (ConnectionException e) {
-          logAndCallCallbackError("Verbindungsfehler: " + e.getMessage(), e);
         } catch (Exception e) {
-          logAndCallCallbackError("Exception: " + e.getMessage(), e);
+          logAndCallCallbackError(e.getMessage(), e);
         }
         finally {
           Looper.myLooper().quit();
