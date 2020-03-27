@@ -92,8 +92,23 @@ public class Zebraprinter extends CordovaPlugin {
           Log.d(LOG_TAG, "Connection opened, setting printer language to line_print");
           SGD.SET("device.languages", "line_print", conn);
           Log.d(LOG_TAG, "Setting printer language finished");
-          conn.write(textToPrint.getBytes(Charset.forName("windows-1252")));
-          Thread.sleep(500);
+
+          byte[] request = textToPrint.getBytes(Charset.forName("windows-1252"));
+          String requestString = new String(request);
+
+          Log.d(LOG_TAG, "Printer (" + macAddress + ") Request (" + requestString.length() + ")");
+          Log.d(LOG_TAG, "Start sending to printer .... then wait");
+          byte[] response = conn.sendAndWaitForResponse(request, 2000, 2000, null);
+          Log.d(LOG_TAG, "Printer response received: " + response.length);
+
+          if (response != null && response.length > 0) {
+            String responseString = new String(response);
+            Log.d(LOG_TAG, "Printer (" + macAddress + ") Response (" + responseString.length() + "): " + responseString);
+          }
+
+          //conn.write(textToPrint.getBytes(Charset.forName("windows-1252")));
+          //Thread.sleep(500);
+
           conn.close();
           callbackContext.success();
         } catch (Exception e) {
