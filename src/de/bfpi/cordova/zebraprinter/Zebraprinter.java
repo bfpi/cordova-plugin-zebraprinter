@@ -72,10 +72,53 @@ public class Zebraprinter extends CordovaPlugin {
       return;
     }
     String macAddress;
-    String textToPrint;
+    String textToPrintPrefix;
+    String textToPrintImage = null;
+    String textToPrintSuffix = null;
+    byte[] requestPrefix;
+    String requestStringPrefix;
+    byte[] requestImage;
+    final String requestStringImage;
+    byte[] requestSuffix;
+    final String requestStringSuffix;
     try {
       macAddress = this.args.getString(0);
-      textToPrint = this.args.getString(1);
+      Log.d(LOG_TAG, "this.args.length(): " + this.args.length());
+      for(int i = 0; i < this.args.length(); i++) {
+        Log.d(LOG_TAG, "this.args.getString(" + i + "): " + this.args.getString(i));
+        Log.d(LOG_TAG, "type: " + this.args.get(i).getClass().getName());
+        if(this.args.get(i).getClass().getName() == "org.json.JSONArray") {
+          JSONArray ar = (JSONArray) this.args.get(i);
+          Log.d(LOG_TAG, "length: " + ar.length());
+          Log.d(LOG_TAG, "--------------------");
+        }
+      }
+      
+      if(this.args.get(1).getClass().getName() == "org.json.JSONArray") {
+        JSONArray ar = (JSONArray) this.args.get(1);
+        textToPrintPrefix = ar.getString(0);
+        textToPrintImage = ar.getString(1);
+        textToPrintSuffix = ar.getString(2);
+      } else {
+        textToPrintPrefix = this.args.getString(1);
+      }
+      
+      requestPrefix = textToPrintPrefix.getBytes(Charset.forName("windows-1252"));
+      requestStringPrefix = new String(requestPrefix);
+      if(textToPrintImage != null && textToPrintImage.length() > 0) {
+        requestImage = textToPrintImage.getBytes(Charset.forName("windows-1252"));
+        requestStringImage = new String(requestImage);
+      } else {
+        requestImage = null;
+        requestStringImage = null;
+      }
+      if(textToPrintSuffix != null && textToPrintSuffix.length() > 0) {
+        requestSuffix = textToPrintSuffix.getBytes(Charset.forName("windows-1252"));
+        requestStringSuffix = new String(requestSuffix);
+      } else {
+        requestSuffix = null;
+        requestStringSuffix = null;
+      }
     }
     catch(JSONException e) {
       logAndCallCallbackError("Exception: "+ e.getMessage(), e);
@@ -92,19 +135,36 @@ public class Zebraprinter extends CordovaPlugin {
           Log.d(LOG_TAG, "Connection opened, setting printer language to line_print");
           SGD.SET("device.languages", "line_print", conn);
           Log.d(LOG_TAG, "Setting printer language finished");
+          int timeout = 2000;
+          
+          Log.d(LOG_TAG, "Printer (" + macAddress + ") - RequestPrefix (" + requestStringPrefix + ")");
+          Log.d(LOG_TAG, "Start sending prefix to printer .... then wait");
+          //byte[] responsePrefix = conn.sendAndWaitForResponse(requestPrefix, timeout, timeout, null);
+          //Log.d(LOG_TAG, "Printer responsePrefix received: " + responsePrefix.length);
+          conn.write(requestPrefix);
+          Thread.sleep(timeout);
+          
+          if(requestStringImage != null && !requestStringImage.isEmpty()) {
+            Log.d(LOG_TAG, "Printer (" + macAddress + ") - RequestImage (" + requestStringImage + ")");
+            Log.d(LOG_TAG, "Start sending Image to printer .... then wait");
+            //byte[] responseImage = conn.sendAndWaitForResponse(requestImage, timeout, timeout, null);
+            //Log.d(LOG_TAG, "Printer responseImage received: " + responseImage.length);
+            conn.write(requestImage);
+            Thread.sleep(timeout);
+          }
+          if(requestStringSuffix != null && !requestStringSuffix.isEmpty()) {
+            Log.d(LOG_TAG, "Printer (" + macAddress + ") - RequestSuffix (" + requestStringSuffix + ")");
+            Log.d(LOG_TAG, "Start sending Suffix to printer .... then wait");
+            //byte[] responseSuffix = conn.sendAndWaitForResponse(requestSuffix, timeout, timeout, null);
+            //Log.d(LOG_TAG, "Printer responseSuffix received: " + responseSuffix.length);
+            conn.write(requestSuffix);
+            Thread.sleep(timeout);
+          }
 
-          byte[] request = textToPrint.getBytes(Charset.forName("windows-1252"));
-          String requestString = new String(request);
-
-          Log.d(LOG_TAG, "Printer (" + macAddress + ") Request (" + requestString.length() + ")");
-          Log.d(LOG_TAG, "Start sending to printer .... then wait");
-          byte[] response = conn.sendAndWaitForResponse(request, 2000, 2000, null);
-          Log.d(LOG_TAG, "Printer response received: " + response.length);
-
-          if (response != null && response.length > 0) {
+          /*if (response != null && response.length() > 0) {
             String responseString = new String(response);
             Log.d(LOG_TAG, "Printer (" + macAddress + ") Response (" + responseString.length() + "): " + responseString);
-          }
+          }*/
 
           //conn.write(textToPrint.getBytes(Charset.forName("windows-1252")));
           //Thread.sleep(500);
